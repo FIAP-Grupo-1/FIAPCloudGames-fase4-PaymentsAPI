@@ -17,7 +17,7 @@ services:
     environment:
       POSTGRES_DB: fcg_payments
       POSTGRES_USER: fcg
-      POSTGRES_PASSWORD: fcg123
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env (copie de .env.example)}
     ports:
       - "5432:5432" # exposto no host para desenvolvimento local (dotnet run)
     volumes:
@@ -32,7 +32,7 @@ services:
     image: rabbitmq:3-management-alpine
     environment:
       RABBITMQ_DEFAULT_USER: fcg
-      RABBITMQ_DEFAULT_PASS: fcg123
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:?defina RABBITMQ_PASS no .env (copie de .env.example)}
     ports:
       - "5672:5672"   # AMQP
       - "15672:15672" # painel de gerenciamento (http://localhost:15672)
@@ -48,13 +48,13 @@ services:
     command: >
       redis-server
       --user default off
-      --user payments on ">pass" "~*" "&*" "+@all"
+      --user payments on ">${REDIS_PASS:?defina REDIS_PASS no .env (copie de .env.example)}" "~*" "&*" "+@all"
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "--user", "catalog", "--pass", "pass", "--no-auth-warning", "ping"]
+      test: ["CMD", "redis-cli", "--user", "payments", "--pass", "${REDIS_PASS:?defina REDIS_PASS no .env}", "--no-auth-warning", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -72,8 +72,10 @@ services:
         condition: service_healthy
     environment:
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=fcg_payments;Username=fcg;Password=fcg123"
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=fcg_payments;Username=fcg;Password=${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}"
+      ConnectionStrings__Redis: "redis:6379,user=payments,password=${REDIS_PASS:?defina REDIS_PASS no .env},abortConnect=false"
       RabbitMq__Host: rabbitmq
+      RabbitMq__Password: ${RABBITMQ_PASS:?defina RABBITMQ_PASS no .env}
       Sns__TopicArn: ${SNS_PAYMENT_EVENTS_TOPIC_ARN:-arn:aws:sns:us-east-1:450753703903:fcg-payment-events}
       AWS_REGION: ${AWS_REGION:-us-east-1}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}

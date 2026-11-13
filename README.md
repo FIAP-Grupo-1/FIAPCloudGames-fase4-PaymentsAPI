@@ -81,11 +81,11 @@ docker-compose.yml     # API + PostgreSQL + RabbitMQ para rodar o serviço isola
 
 | Variável | Descrição | Exemplo |
 |----------|-----------|---------|
-| `ConnectionStrings__DefaultConnection` | Connection string do PostgreSQL | `Host=db;Port=5432;Database=fcg_payments;Username=fcg;Password=fcg123` |
+| `ConnectionStrings__DefaultConnection` | Connection string do PostgreSQL | `Host=db;Port=5432;Database=fcg_payments;Username=fcg;Password=<senha>` |
 | `RabbitMq__Host` | Host do RabbitMQ | `rabbitmq` |
 | `RabbitMq__Port` | Porta do RabbitMQ | `5672` |
 | `RabbitMq__Username` | Usuário do RabbitMQ | `fcg` |
-| `RabbitMq__Password` | Senha do RabbitMQ | `fcg123` |
+| `RabbitMq__Password` | Senha do RabbitMQ | — (`.env` / Secret `fcg-secrets`) |
 | `RabbitMq__VirtualHost` | Virtual host do RabbitMQ | `/` |
 | `Sns__TopicArn` | ARN do tópico SNS onde o `PaymentProcessedEvent` também é publicado | `arn:aws:sns:us-east-1:450753703903:fcg-payment-events` |
 | `AWS_REGION` / `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Credenciais AWS para publicar no SNS (padrão do SDK; sem elas a publicação SNS falha silenciosamente, mas o RabbitMQ continua funcionando normalmente) | — |
@@ -93,14 +93,14 @@ docker-compose.yml     # API + PostgreSQL + RabbitMQ para rodar o serviço isola
 
 ## Executar com Docker (serviço isolado)
 
-Sobe API + PostgreSQL + RabbitMQ:
+Sobe API + PostgreSQL + RabbitMQ + Redis. Nenhuma senha fica no repositório: antes, copie `.env.example` para `.env` e troque os `troque-me` (o compose recusa subir sem eles). Para o `dotnet run`, use `dotnet user-secrets` com as mesmas chaves (`ConnectionStrings:DefaultConnection`, `ConnectionStrings:Redis`, `RabbitMq:Password`).
 
 ```bash
 docker compose up --build
 ```
 
 - API: http://localhost:8080 (ex.: `GET http://localhost:8080/health`)
-- Painel do RabbitMQ: http://localhost:15672 (usuário `fcg` / senha `fcg123`)
+- Painel do RabbitMQ: http://localhost:15672 (usuário `fcg`, senha `RABBITMQ_PASS` do `.env`)
 
 > Para o fluxo completo entre microsserviços (Catalog → Payments → Notifications), use o
 > repositório de orquestração, onde todos os serviços compartilham o mesmo RabbitMQ.
